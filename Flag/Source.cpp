@@ -2,7 +2,6 @@
 #define BITMAP_ID 0x4D42
 
 #include <iostream>
-#include <glut.h>
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,20 +28,20 @@ float wrapValue;						//przenosi fali z końca na początek flagi
 //Inicjacja punktów flagi za pomocą funkcji sin()
 void InitializeFlag()
 {
-	int x;								//licznik w plaszczyżnie x
-	int y;								//licznik w plaszczyżnie y
+	int xIdx;								//licznik w plaszczyżnie x
+	int yIdx;								//licznik w plaszczyżnie y
 	float sinTemp;						
 
 	//Przegląda wszystkie punkty flagi w pętli i wyznacza wartość funkcji sin dla
 	//współrzędnej z. Wszpółrzędne x i y otrzymują wartość odpowiedniego licznika pętli
-	for (x = 0; x < 36; x++)
+	for (xIdx = 0; xIdx < 36; xIdx++)
 	{
-		for (y = 0; y < 20; y++)
+		for (yIdx = 0; yIdx < 20; yIdx++)
 		{
-			flagPoints[x][y][0] = (float)x;
-			flagPoints[x][y][1] = (float)y;
-			sinTemp = (((float)x * 20.0f) / 360.0f) * 2.0f * M_PI;
-			flagPoints[x][y][2] = (float)sin(sinTemp);
+			flagPoints[xIdx][yIdx][0] = (float)xIdx;
+			flagPoints[xIdx][yIdx][1] = (float)yIdx;
+			sinTemp = (((float)xIdx * 20.0f) / 360.0f) * 2.0f * M_PI;
+			flagPoints[xIdx][yIdx][2] = (float)sin(sinTemp);
 		}
 	}
 }
@@ -56,7 +55,8 @@ unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfo
     unsigned char tempRGB;              //zmienna zamiany składowych
 
     //otwiera plik w trybie read binary
-    filePtr = fopen(filename, "rb");
+    fopen_s(&filePtr, filename, "rb");
+    //filePtr = fopen(filename, "rb");
     if (filePtr == NULL)
         return NULL;
 
@@ -138,8 +138,8 @@ void Initialize()
 //Obraz flagi dla pojedynczej klatki animacjii
 void DrawFlag()
 {
-    int x;                                  //licznik w kierunku osi x
-    int y;                                  //licznik w kierunku osi y
+    int xIdx;                                  //licznik w kierunku osi x
+    int yIdx;                                  //licznik w kierunku osi y
     float texLeft;                          //lewa współrzędna tekstury
     float texBottom;                        //dolna współrzedna tekstury
     float texTop;                           //górna współrzedna tekstury
@@ -149,44 +149,44 @@ void DrawFlag()
     glBindTexture(GL_TEXTURE_2D, texture);  //wybiera obiekt tekstury
     glBegin(GL_QUADS);                      //rysuje czworokąty
 
-    for (x = 0; x < 36; x++)
+    for (xIdx = 0; xIdx < 36; xIdx++)
     {
-        for (y = 0; y < 18; y++)
+        for (yIdx = 0; yIdx < 18; yIdx++)
         {
             //wyznacza współrzędne tekstury dla bieżącego czworokąta
-            texLeft = float(x) / 35.0f;
-            texBottom = float(y) / 18.0f;
-            texRight = float(x + 1) / 35.0f;
-            texTop = float(y + 1) / 18.0f;
+            texLeft = float(xIdx) / 35.0f;
+            texBottom = float(yIdx) / 18.0f;
+            texRight = float(xIdx + 1) / 35.0f;
+            texTop = float(yIdx + 1) / 18.0f;
 
             //lewy dolny wierzcholek
             glTexCoord2f(texLeft, texBottom);
-            glVertex3f(flagPoints[x][y][0], flagPoints[x][y][1], flagPoints[x][y][2]);
+            glVertex3f(flagPoints[xIdx][yIdx][0], flagPoints[xIdx][yIdx][1], flagPoints[xIdx][yIdx][2]);
 
             //prawy dolny wierzcholek
             glTexCoord2f(texRight, texBottom);
-            glVertex3f(flagPoints[x+1][y][0], flagPoints[x+1][y][1], flagPoints[x+1][y][2]);
+            glVertex3f(flagPoints[xIdx+1][yIdx][0], flagPoints[xIdx+1][yIdx][1], flagPoints[xIdx+1][yIdx][2]);
 
             //prawy górny wierzcholek
             glTexCoord2f(texRight, texTop);
-            glVertex3f(flagPoints[x+1][y+1][0], flagPoints[x+1][y+1][1], flagPoints[x+1][y+1][2]);
+            glVertex3f(flagPoints[xIdx+1][yIdx+1][0], flagPoints[xIdx+1][yIdx+1][1], flagPoints[xIdx+1][yIdx+1][2]);
 
             //lewy górny wierzcholek
             glTexCoord2f(texLeft, texTop);
-            glVertex3f(flagPoints[x][y+1][0], flagPoints[x][y+1][1], flagPoints[x][y+1][2]);
+            glVertex3f(flagPoints[xIdx][yIdx+1][0], flagPoints[xIdx][yIdx+1][1], flagPoints[xIdx][yIdx+1][2]);
         }
     }
     glEnd();
 
     //Udaje ruch flagi
-    for (y = 0; y < 19; y++)
+    for (yIdx = 0; yIdx < 19; yIdx++)
     {
-        wrapValue = flagPoints[35][y][2];
-        for (x = 35; x < 0; x--)
+        wrapValue = flagPoints[35][yIdx][2];
+        for(xIdx = 35; xIdx >=0; xIdx--)
         {
-            flagPoints[x][y][2] = flagPoints[x - 1][y][2];
+            flagPoints[xIdx][yIdx][2] = flagPoints[xIdx - 1][yIdx][2];
         }
-        flagPoints[0][y][2] = wrapValue;
+        flagPoints[0][yIdx][2] = wrapValue;
     }
     glPopMatrix();
 }
@@ -206,6 +206,117 @@ void Render()
 //funkcja określająca format pikseli
 void SetupPixelFormat(HDC hDC)
 {
+    int nPixelFormat;                                   //indeks formatu pikseli
 
+    static PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+        PFD_TYPE_RGBA,
+        32,
+        0,0,0,0,0,0,
+        0,
+        0,
+        0,
+        0,0,0,0,
+        16,
+        0,
+        0,
+        PFD_MAIN_PLANE,
+        0,
+        0,0,0
+    };
+
+    nPixelFormat = ChoosePixelFormat(hDC, &pfd);
+
+    //określe format pikseli dla danego kontekstu urządzenia
+    SetPixelFormat(hDC, nPixelFormat, &pfd);
+}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    static HGLRC hRC;
+    static HDC hDC;
+    int width, height;
+
+    switch (message)
+    {
+    case WM_CREATE:
+        hDC = GetDC(hwnd);
+        g_HDC = hDC;
+        SetupPixelFormat(hDC);
+
+        hRC = wglCreateContext(hDC);
+        wglMakeCurrent(hDC, hRC);
+        return 0;
+        break;
+
+    case WM_CLOSE:
+        wglMakeCurrent(hDC, NULL);
+        wglDeleteContext(hRC);
+        PostQuitMessage(0);
+        return 0;
+        break;
+
+    case WM_SIZE:
+        height = HIWORD(lParam);
+        width = LOWORD(lParam);
+
+        if (height == 0)
+        {
+            height = 1;
+        }
+
+        glViewport(0, 0, width, height);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+
+        gluPerspective(54.0f, (GLfloat)width / (GLfloat)height, 1.0f, 1000.0f);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        return 0;
+        break;
+
+    case WM_KEYDOWN:
+        keyPressed[wParam] = true;
+        return 0;
+        break;
+
+    case WM_KEYUP:
+        keyPressed[wParam] = false;
+        return 0;
+        break;
+
+    default:
+        break;
+    }
+    return (DefWindowProc(hwnd, message, wParam, lParam));
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+    WNDCLASSEX windowClass;
+    HWND hwnd;
+    MSG msg;
+    bool done;
+    DWORD dwExStyle;
+    DWORD dwStyle;
+    RECT windowRect;
+
+    int width = 800;
+    int height = 600;
+    int bits = 32;
+
+    windowRect.left = (long)0;
+    windowRect.right = (long)width;
+    windowRect.top = (long)0;
+    windowRect.bottom = (long)height;
+
+    windowClass.cbSize = sizeof(WNDCLASSEX);
+    windowClass.style = CS_HREDRAW | CS_VREDRAW;
+    windowClass.lpfnWndProc = WndProc;
+    windowClass.cbClsExtra = 0;
+    windowClass.cbWndExtra = 0;
 }
 
