@@ -5,10 +5,11 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>
+#include <glew.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
+#include <stb_image.h>
 using namespace std;
 
 //Zmienne globalne
@@ -45,7 +46,7 @@ void InitializeFlag()
 		}
 	}
 }
-
+/*
 unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
 {
     FILE* filePtr;                      //wskażnik pliku
@@ -110,7 +111,50 @@ unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfo
     fclose(filePtr);
     return bitmapImage;
 }
+*/
+/*
+GLuint LoadTexture(const char* filename)
+{
+    GLuint texture;
+    int width, height;
+    unsigned char* data;
 
+    FILE* file;
+    fopen_s(&file, filename, "rb");
+
+    if (file == NULL) return 0;
+    width = 1024;
+    height = 512;
+    data = (unsigned char*)malloc(width * height * 3);
+    //int size = fseek(file,);
+    fread(data, width * height * 3, 1, file);
+    fclose(file);
+
+    for (int i = 0; i < width * height; ++i)
+    {
+        int index = i * 3;
+        unsigned char B, R;
+        B = data[index];
+        R = data[index + 2];
+
+        data[index] = R;
+        data[index + 2] = B;
+    }
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    free(data);
+
+    return texture;
+}
+*/
 //Zainicjowania grafiki OpenGl
 void Initialize()
 {
@@ -122,17 +166,29 @@ void Initialize()
 	glEnable(GL_TEXTURE_2D);				//wlącza tekstury 2D
 
     //ładuje obraz tekstury
-    bitmapData = LoadBitmapFile("flag.bmp", &bitmapInfoHeader);
-
+    //bitmapData = LoadBitmapFile("flag.bmp", &bitmapInfoHeader);
+ 
     glGenTextures(1, &texture);             //tworzy obiekt tekstury
     glBindTexture(GL_TEXTURE_2D, texture);  //aktywuje obiekt tekstury
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    //tworzy obraz tekstury
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmapInfoHeader.biWidth, bitmapInfoHeader.biHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
-    InitializeFlag();
+    int width, height, nrChannels;
+    bitmapData = stbi_load("flag.bmp",&width,&height,&nrChannels,0);
+
+    if (bitmapData)
+    {
+        //tworzy obraz tekstury
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
+        InitializeFlag();
+    }
+    else
+    {
+        printf("Error!");
+        MessageBox(NULL, L"Failed to load texture", NULL, MB_OK);
+    }
+    
 }
 
 //Obraz flagi dla pojedynczej klatki animacjii
@@ -318,5 +374,94 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     windowClass.lpfnWndProc = WndProc;
     windowClass.cbClsExtra = 0;
     windowClass.cbWndExtra = 0;
+    windowClass.hInstance = hInstance;
+    windowClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    windowClass.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    windowClass.hbrBackground = NULL;
+    windowClass.lpszMenuName = NULL;
+    windowClass.lpszClassName = L"Flaga";
+    windowClass.hIconSm = LoadIconW(NULL, IDI_WINLOGO);
+
+    if (!RegisterClassExW(&windowClass))
+        return 0;
+
+    if (fullScreen)
+    {
+        DEVMODE dmScreenSettings;
+        memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
+        dmScreenSettings.dmSize = sizeof(dmScreenSettings);
+        dmScreenSettings.dmPelsWidth = width;
+        dmScreenSettings.dmPelsHeight = height;
+        dmScreenSettings.dmBitsPerPel = bits;
+        dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+        if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+        {
+            MessageBox(NULL, L"Display mode failed", NULL, MB_OK);
+            fullScreen = false;
+        }
+    }
+    if (fullScreen)
+    {
+        dwExStyle = WS_EX_APPWINDOW;
+        dwStyle = WS_POPUP;
+        ShowCursor(false);
+    }
+    else
+    {
+        dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+        dwStyle = WS_OVERLAPPEDWINDOW;
+    }
+    
+    AdjustWindowRectEx(&windowRect, dwStyle, false, dwExStyle);
+    
+    //tworzenia okna
+    hwnd = CreateWindowExW(NULL,
+        L"Flaga",
+        L"Falowania flagi",
+        dwStyle | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+        0, 0,
+        windowRect.right - windowRect.left,
+        windowRect.bottom - windowRect.top,
+        NULL,
+        NULL,
+        hInstance,
+        NULL);
+    if (!hwnd)
+        return 0;
+
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
+
+    done = false;
+    Initialize();
+    
+    while (!done)
+    {
+        PeekMessage(&msg, hwnd, NULL, NULL, PM_REMOVE);
+
+        if (msg.message == WM_QUIT)
+        {
+            done = true;
+        }
+        else
+        {
+            if (keyPressed[VK_ESCAPE])
+                done = true;
+            else
+            {
+                Render();
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        }
+    }
+   free(bitmapData);
+
+    if (fullScreen)
+    {
+        ChangeDisplaySettings(NULL, 0);
+        ShowCursor(true);
+    }
 }
 
