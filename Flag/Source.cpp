@@ -1,4 +1,5 @@
 ﻿#define _USE_MATH_DEFINES
+#define STB_IMAGE_IMPLEMENTATION
 #define BITMAP_ID 0x4D42
 
 #include <iostream>
@@ -15,7 +16,7 @@ using namespace std;
 //Zmienne globalne
 HDC g_HDC;								//globalny kontekst urzdządzenia
 bool fullScreen = false;				//true = tryb pełnoekrankowy
-										//false = tryb okienkowy
+                                        //false = tryb okienkowy
 bool keyPressed[256];					//tablica przyciśnięć klawisz
 
 //Opis tekstury
@@ -29,22 +30,22 @@ float wrapValue;						//przenosi fali z końca na początek flagi
 //Inicjacja punktów flagi za pomocą funkcji sin()
 void InitializeFlag()
 {
-	int xIdx;								//licznik w plaszczyżnie x
-	int yIdx;								//licznik w plaszczyżnie y
-	float sinTemp;						
+    int xIdx;								//licznik w plaszczyżnie x
+    int yIdx;								//licznik w plaszczyżnie y
+    float sinTemp;
 
-	//Przegląda wszystkie punkty flagi w pętli i wyznacza wartość funkcji sin dla
-	//współrzędnej z. Wszpółrzędne x i y otrzymują wartość odpowiedniego licznika pętli
-	for (xIdx = 0; xIdx < 36; xIdx++)
-	{
-		for (yIdx = 0; yIdx < 20; yIdx++)
-		{
-			flagPoints[xIdx][yIdx][0] = (float)xIdx;
-			flagPoints[xIdx][yIdx][1] = (float)yIdx;
-			sinTemp = (((float)xIdx * 20.0f) / 360.0f) * 2.0f * M_PI;
-			flagPoints[xIdx][yIdx][2] = (float)sin(sinTemp);
-		}
-	}
+    //Przegląda wszystkie punkty flagi w pętli i wyznacza wartość funkcji sin dla
+    //współrzędnej z. Wszpółrzędne x i y otrzymują wartość odpowiedniego licznika pętli
+    for (xIdx = 0; xIdx < 36; xIdx++)
+    {
+        for (yIdx = 0; yIdx < 20; yIdx++)
+        {
+            flagPoints[xIdx][yIdx][0] = (float)xIdx;
+            flagPoints[xIdx][yIdx][1] = (float)yIdx;
+            sinTemp = (((float)xIdx * 20.0f) / 360.0f) * 2.0f * M_PI;
+            flagPoints[xIdx][yIdx][2] = (float)sin(sinTemp);
+        }
+    }
 }
 /*
 unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfoHeader)
@@ -54,32 +55,25 @@ unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfo
     unsigned char* bitmapImage;         //bufor obrazu
     int imageIdx = 0;                   //licznik bajtów obrazu
     unsigned char tempRGB;              //zmienna zamiany składowych
-
     //otwiera plik w trybie read binary
     fopen_s(&filePtr, filename, "rb");
     //filePtr = fopen(filename, "rb");
     if (filePtr == NULL)
         return NULL;
-
     //wczytuje nagłówek pliku
     fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-
     //sprawdza, czy rzeczywiście jest to plik BMP
     if (bitmapFileHeader.bfType != BITMAP_ID)
     {
         fclose(filePtr);
         return NULL;
     }
-
     //wczytuje nagłówek obrazu zapisanego w pliku
-    fread(bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr); 
-
+    fread(bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
     //ustawia wskażnik pliku na początku danych opisujących obraz
     fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
-
     //przydziela pamięć na bufor obrazu
     bitmapImage = (unsigned char*)malloc(bitmapInfoHeader->biSizeImage);
-
     //sprawdza, czy pamięć została przydzielona
     if (!bitmapImage)
     {
@@ -87,18 +81,14 @@ unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfo
         fclose(filePtr);
         return NULL;
     }
-
     //wczytuje dane obrazu
     fread(bitmapImage, bitmapInfoHeader->biSizeImage, 1, filePtr);
-
-
     //sprawdza czy operacja powiodła się
     if (bitmapImage == NULL)
     {
         fclose(filePtr);
         return NULL;
     }
-
     //zamienia składowe R i B, aby uzyskać format RGB
     for (imageIdx = 0; imageIdx < bitmapInfoHeader->biSizeImage; imageIdx += 3)
     {
@@ -106,7 +96,6 @@ unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfo
         bitmapImage[imageIdx] = bitmapImage[imageIdx + 2];
         bitmapImage[imageIdx + 2] = tempRGB;
     }
-
     //zamyka plik i zwraca wskażnik bufora zawierającego obraz
     fclose(filePtr);
     return bitmapImage;
@@ -118,10 +107,8 @@ GLuint LoadTexture(const char* filename)
     GLuint texture;
     int width, height;
     unsigned char* data;
-
     FILE* file;
     fopen_s(&file, filename, "rb");
-
     if (file == NULL) return 0;
     width = 1024;
     height = 512;
@@ -129,58 +116,57 @@ GLuint LoadTexture(const char* filename)
     //int size = fseek(file,);
     fread(data, width * height * 3, 1, file);
     fclose(file);
-
     for (int i = 0; i < width * height; ++i)
     {
         int index = i * 3;
         unsigned char B, R;
         B = data[index];
         R = data[index + 2];
-
         data[index] = R;
         data[index + 2] = B;
     }
-
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     free(data);
-
     return texture;
 }
 */
 //Zainicjowania grafiki OpenGl
 void Initialize()
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	//tlo w czarnym kolorze
-	glEnable(GL_DEPTH_TEST);				//usuwanie ukrytych powierzchni
-	glEnable(GL_CULL_FACE);					//brak obliczeń dla niewidocznych stron wielokątów
-	glFrontFace(GL_CCW);					//niewidoczne strony posiadają porządek wierzcholków
-											//przeciwny do kierunku ruchu wskazówek zegara
-	glEnable(GL_TEXTURE_2D);				//wlącza tekstury 2D
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	//tlo w czarnym kolorze
+    glEnable(GL_DEPTH_TEST);				//usuwanie ukrytych powierzchni
+    glEnable(GL_CULL_FACE);					//brak obliczeń dla niewidocznych stron wielokątów
+    glFrontFace(GL_CCW);					//niewidoczne strony posiadają porządek wierzcholków
+                                            //przeciwny do kierunku ruchu wskazówek zegara
+    //glEnable(GL_TEXTURE_2D);				//wlącza tekstury 2D
 
     //ładuje obraz tekstury
     //bitmapData = LoadBitmapFile("flag.bmp", &bitmapInfoHeader);
- 
-    glGenTextures(1, &texture);             //tworzy obiekt tekstury
-    glBindTexture(GL_TEXTURE_2D, texture);  //aktywuje obiekt tekstury
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int width, height, nrChannels;
-    bitmapData = stbi_load("flag.bmp",&width,&height,&nrChannels,0);
+    bitmapData = stbi_load("flag.bmp", &width, &height, &nrChannels, 0);
+
+    glGenTextures(1, &texture);             //tworzy obiekt tekstury
+    glBindTexture(GL_TEXTURE_2D, texture);  //aktywuje obiekt tekstury
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     if (bitmapData)
     {
         //tworzy obraz tekstury
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        //stbi_image_free(bitmapData);
+
         InitializeFlag();
     }
     else
@@ -188,7 +174,7 @@ void Initialize()
         printf("Error!");
         MessageBox(NULL, L"Failed to load texture", NULL, MB_OK);
     }
-    
+
 }
 
 //Obraz flagi dla pojedynczej klatki animacjii
@@ -221,15 +207,15 @@ void DrawFlag()
 
             //prawy dolny wierzcholek
             glTexCoord2f(texRight, texBottom);
-            glVertex3f(flagPoints[xIdx+1][yIdx][0], flagPoints[xIdx+1][yIdx][1], flagPoints[xIdx+1][yIdx][2]);
+            glVertex3f(flagPoints[xIdx + 1][yIdx][0], flagPoints[xIdx + 1][yIdx][1], flagPoints[xIdx + 1][yIdx][2]);
 
             //prawy górny wierzcholek
             glTexCoord2f(texRight, texTop);
-            glVertex3f(flagPoints[xIdx+1][yIdx+1][0], flagPoints[xIdx+1][yIdx+1][1], flagPoints[xIdx+1][yIdx+1][2]);
+            glVertex3f(flagPoints[xIdx + 1][yIdx + 1][0], flagPoints[xIdx + 1][yIdx + 1][1], flagPoints[xIdx + 1][yIdx + 1][2]);
 
             //lewy górny wierzcholek
             glTexCoord2f(texLeft, texTop);
-            glVertex3f(flagPoints[xIdx][yIdx+1][0], flagPoints[xIdx][yIdx+1][1], flagPoints[xIdx][yIdx+1][2]);
+            glVertex3f(flagPoints[xIdx][yIdx + 1][0], flagPoints[xIdx][yIdx + 1][1], flagPoints[xIdx][yIdx + 1][2]);
         }
     }
     glEnd();
@@ -238,7 +224,7 @@ void DrawFlag()
     for (yIdx = 0; yIdx < 19; yIdx++)
     {
         wrapValue = flagPoints[35][yIdx][2];
-        for(xIdx = 35; xIdx >=0; xIdx--)
+        for (xIdx = 35; xIdx >= 0; xIdx--)
         {
             flagPoints[xIdx][yIdx][2] = flagPoints[xIdx - 1][yIdx][2];
         }
@@ -412,9 +398,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
         dwStyle = WS_OVERLAPPEDWINDOW;
     }
-    
+
     AdjustWindowRectEx(&windowRect, dwStyle, false, dwExStyle);
-    
+
     //tworzenia okna
     hwnd = CreateWindowExW(NULL,
         L"Flaga",
@@ -435,7 +421,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     done = false;
     Initialize();
-    
+
     while (!done)
     {
         PeekMessage(&msg, hwnd, NULL, NULL, PM_REMOVE);
@@ -456,7 +442,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
     }
-   free(bitmapData);
+    free(bitmapData);
 
     if (fullScreen)
     {
@@ -464,4 +450,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ShowCursor(true);
     }
 }
-

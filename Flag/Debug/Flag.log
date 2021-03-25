@@ -1,4 +1,4 @@
 ﻿  Source.cpp
-C:\Users\админ\OneDrive\Документы\GitHub\Waving_Flag\Flag\Source.cpp(44,54): warning C4244: =: преобразование "double" в "float", возможна потеря данных
-C:\Users\админ\OneDrive\Документы\GitHub\Waving_Flag\Flag\Source.cpp(466): warning C4715: WinMain: значение возвращается не при всех путях выполнения
+C:\Users\админ\OneDrive\Документы\GitHub\Waving_Flag\Flag\Source.cpp(45,63): warning C4244: =: преобразование "double" в "float", возможна потеря данных
+C:\Users\админ\OneDrive\Документы\GitHub\Waving_Flag\Flag\Source.cpp(452): warning C4715: WinMain: значение возвращается не при всех путях выполнения
   Flag.vcxproj -> C:\Users\админ\OneDrive\Документы\GitHub\Waving_Flag\Debug\Flag.exe
