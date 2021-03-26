@@ -22,7 +22,7 @@ bool keyPressed[256];					//tablica przyciśnięć klawisz
 //Opis tekstury
 BITMAPINFOHEADER bitmapInfoHeader;		//naglówek pliku
 unsigned char* bitmapData;				//dane tekstury
-unsigned int texture;					//obiekt tekstury
+unsigned int texture = 0;					//obiekt tekstury
 //Opis flagi
 float flagPoints[36][20][3];			//flaga 36x20
 float wrapValue;						//przenosi fali z końca na początek flagi
@@ -101,6 +101,8 @@ unsigned char *LoadBitmapFile(const char *filename, BITMAPINFOHEADER *bitmapInfo
     return bitmapImage;
 }
 */
+
+
 /*
 GLuint LoadTexture(const char* filename)
 {
@@ -142,29 +144,40 @@ void Initialize()
 {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	//tlo w czarnym kolorze
     glEnable(GL_DEPTH_TEST);				//usuwanie ukrytych powierzchni
-    glEnable(GL_CULL_FACE);					//brak obliczeń dla niewidocznych stron wielokątów
-    glFrontFace(GL_CCW);					//niewidoczne strony posiadają porządek wierzcholków
+    glDepthFunc(GL_LESS);
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    //glEnable(GL_CULL_FACE);					//brak obliczeń dla niewidocznych stron wielokątów
+    //glFrontFace(GL_CCW);					//niewidoczne strony posiadają porządek wierzcholków
                                             //przeciwny do kierunku ruchu wskazówek zegara
-    //glEnable(GL_TEXTURE_2D);				//wlącza tekstury 2D
+    glEnable(GL_TEXTURE_2D);				//wlącza tekstury 2D
 
     //ładuje obraz tekstury
     //bitmapData = LoadBitmapFile("flag.bmp", &bitmapInfoHeader);
 
     int width, height, nrChannels;
-    bitmapData = stbi_load("flag.bmp", &width, &height, &nrChannels, 0);
+    bitmapData = stbi_load("flag.bmp", &width, &height, &nrChannels, STBI_rgb_alpha);
 
     glGenTextures(1, &texture);             //tworzy obiekt tekstury
     glBindTexture(GL_TEXTURE_2D, texture);  //aktywuje obiekt tekstury
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bitmapData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    if (bitmapData)
+    InitializeFlag();
+
+           
+ /*
+ if (bitmapData)
     {
         //tworzy obraz tekstury
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
         glBindTexture(GL_TEXTURE_2D, 0);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bitmapInfoHeader.biWidth, bitmapInfoHeader.biHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapData);
         //stbi_image_free(bitmapData);
 
         InitializeFlag();
@@ -174,6 +187,8 @@ void Initialize()
         printf("Error!");
         MessageBox(NULL, L"Failed to load texture", NULL, MB_OK);
     }
+*/
+   
 
 }
 
@@ -274,7 +289,7 @@ void SetupPixelFormat(HDC hDC)
     //określe format pikseli dla danego kontekstu urządzenia
     SetPixelFormat(hDC, nPixelFormat, &pfd);
 }
-
+//Procedura okienkowa
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static HGLRC hRC;
