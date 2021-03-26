@@ -146,10 +146,10 @@ void Initialize()
     glEnable(GL_DEPTH_TEST);				//usuwanie ukrytych powierzchni
     glDepthFunc(GL_LESS);
     glShadeModel(GL_SMOOTH);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    //glEnable(GL_CULL_FACE);					//brak obliczeń dla niewidocznych stron wielokątów
-    //glFrontFace(GL_CCW);					//niewidoczne strony posiadają porządek wierzcholków
+    //glEnable(GL_LIGHTING);
+    //glEnable(GL_LIGHT0);
+    glEnable(GL_CULL_FACE);					//brak obliczeń dla niewidocznych stron wielokątów
+    glFrontFace(GL_CCW);					//niewidoczne strony posiadają porządek wierzcholków
                                             //przeciwny do kierunku ruchu wskazówek zegara
     glEnable(GL_TEXTURE_2D);				//wlącza tekstury 2D
 
@@ -161,9 +161,9 @@ void Initialize()
 
     glGenTextures(1, &texture);             //tworzy obiekt tekstury
     glBindTexture(GL_TEXTURE_2D, texture);  //aktywuje obiekt tekstury
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, bitmapData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
